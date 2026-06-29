@@ -27,8 +27,13 @@ WORKDIR=$SLURM_SUBMIT_DIR
 cd $WORKDIR
 
 # Initialize and activate conda
-eval "$(conda shell.bash hook)"
-conda activate bisection
+[ -e .venv ] || conda create -p .venv -y python pip
+source ~/.bashrc
+conda activate ./.venv
+
+
+# rm -rf .venv
+exit
 
 export TOKENIZERS_PARALLELISM=false
 export PYTHONUNBUFFERED=1
