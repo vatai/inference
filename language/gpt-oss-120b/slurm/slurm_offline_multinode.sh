@@ -54,7 +54,7 @@ export HBM_LOG_FILE=logs/http_payloads.jsonl
 mkdir -p logs outputs
 
 echo "=========================================="
-echo "GPT-OSS-120B MLPerf Offline (4-Node)"
+echo "GPT-OSS-120B MLPerf Offline (${SLURM_JOB_NUM_NODES}-Node)"
 echo "Node: $(hostname)"
 echo "Node Rank: $SLURM_NODEID"
 echo "Total Nodes: $SLURM_NNODES"
@@ -72,7 +72,7 @@ echo "NCCL init:    $NCCL_INIT_ADDR"
 # -------------------------------------------------
 # 1. Start SGLang servers on ALL nodes
 # -------------------------------------------------
-echo "Starting SGLang server (TP=16, NNodes=4, NodeRank=$LEADER_NODE)..."
+echo "Starting SGLang server (TP=16, NNodes=${SLURM_JOB_NUM_NODES}, NodeRank=$LEADER_NODE)..."
 
 export TIME_STAMP=$(date +%Y%m%d_%H%M%S)
 
