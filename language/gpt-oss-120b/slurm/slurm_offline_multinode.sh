@@ -10,6 +10,27 @@
 
 module load nvhpc-hpcx
 
+# Initialize and activate conda
+[ -e .venv ] || conda create -p .venv -y python pip
+eval "$(conda shell.bash hook)"
+activate ./.venv
+conda install rust -y
+
+pip install --upgrade pip
+pip install -r requirements.txt
+
+./setup_enroot.sh
+if pip freeze | grep loadgen; then
+	echo SKIP ./setup.sh
+else
+	CC=gcc CXX=g++ ./setup.sh
+fi
+if pip freeze | grep sglang; then 
+	echo SKIP pip install sglang
+else
+	CC=gcc CXX=g++ pip install sglang
+fi
+
 # (1) Environment variables to enable CUDA-aware MPI
 export OMPI_MCA_pml=ucx
 export UCX_CUDA_COPY_DMABUF=no
@@ -25,15 +46,6 @@ export UCX_PROTO_ENABLE=n
 
 WORKDIR=$SLURM_SUBMIT_DIR
 cd $WORKDIR
-
-# Initialize and activate conda
-[ -e .venv ] || conda create -p .venv -y python pip
-source ~/.bashrc
-conda activate ./.venv
-
-
-# rm -rf .venv
-exit
 
 export TOKENIZERS_PARALLELISM=false
 export PYTHONUNBUFFERED=1
@@ -84,7 +96,7 @@ MPIRUN_ARGS=(
 )
 
 mpirun "${MPIRUN_ARGS[@]}" bash -x -c '
-python3 -m sglang.launch_server \
+CC=gcc CXX=g++ python3 -m sglang.launch_server \
 	--model-path /work/hps0/home/ea0020/other-code/inference/language/gpt-oss-120b/download/gpt-oss-model/gpt-oss-120b \
 	--host 0.0.0.0 \
 	--port 30000 \
@@ -116,6 +128,8 @@ for i in $(seq 1 600); do
     fi
     sleep 2
 done
+
+exit
 
 echo "[Leader] Waiting 60s for warmup (FlashInfer + NCCL)..."
 sleep 60
