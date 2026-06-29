@@ -139,8 +139,6 @@ if [ -f logs/nccl_debug.log ]; then
     : > logs/nccl_debug.log
 fi
 
-exit 
-
 # Wait on all ranks until leader finishes warmup
 srun --nodes=4 --ntasks-per-node=1 bash -c \
     'if [ "$SLURM_NODEID" -eq 0 ]; then sleep 90; fi; sleep 30' || true
@@ -164,6 +162,5 @@ python3 run_mlperf.py \
     --user-conf user.conf || true
 
 echo "[Leader] Benchmark complete"
-
-
 echo "Multinode job finished"
+
