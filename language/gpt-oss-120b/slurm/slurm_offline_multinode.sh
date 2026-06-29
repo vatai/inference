@@ -140,7 +140,7 @@ if [ -f logs/nccl_debug.log ]; then
 fi
 
 # Wait on all ranks until leader finishes warmup
-srun bash -c 'if [ "$SLURM_NODEID" -eq 0 ]; then sleep 90; fi; sleep 30' || true
+# srun bash -c 'if [ "$SLURM_NODEID" -eq 0 ]; then sleep 90; fi; sleep 30' || true
 
 # -------------------------------------------------
 # 3. Leader: run MLPerf benchmark
@@ -155,7 +155,7 @@ python3 run_mlperf.py \
     --input-file /work/hps0/home/ea0020/other-code/inference/language/gpt-oss-120b/download/gpt-oss-dataset/acc/acc_eval_ref.parquet \
     --backend sglang \
     --server-url "http://${LEADER_NODE}:30000" \
-    --output-dir "outputs/results_$(date +%Y%m%d_%H%M%S)" \
+    --output-dir "outputs/results_${TIME_STAMP}" \
     --max-new-tokens 32768 \
     --mlperf-conf mlperf.conf \
     --user-conf user.conf || true
