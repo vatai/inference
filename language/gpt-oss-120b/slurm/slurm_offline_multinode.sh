@@ -140,8 +140,7 @@ if [ -f logs/nccl_debug.log ]; then
 fi
 
 # Wait on all ranks until leader finishes warmup
-srun --nodes=4 --ntasks-per-node=1 bash -c \
-    'if [ "$SLURM_NODEID" -eq 0 ]; then sleep 90; fi; sleep 30' || true
+srun bash -c 'if [ "$SLURM_NODEID" -eq 0 ]; then sleep 90; fi; sleep 30' || true
 
 # -------------------------------------------------
 # 3. Leader: run MLPerf benchmark
