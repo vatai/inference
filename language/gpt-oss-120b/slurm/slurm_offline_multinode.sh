@@ -17,7 +17,7 @@ activate ./.venv
 
 LOCKFILE=ai4s.setup.done
 
-if [ -e $LOCKFILE ]; then
+if ! [ -e $LOCKFILE ]; then
 	conda install rust -y
 	pip install --upgrade pip
 	pip install -r requirements.txt
