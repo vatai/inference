@@ -8,27 +8,23 @@
 #SBATCH --time=8:00:00
 
 
-module load nvhpc-hpcx
+# module load nvhpc-hpcx
 
 # Initialize and activate conda
 [ -e .venv ] || conda create -p .venv -y python pip
 eval "$(conda shell.bash hook)"
 activate ./.venv
-conda install rust -y
 
-pip install --upgrade pip
-pip install -r requirements.txt
+LOCKFILE=ai4s.setup.done
 
-./setup_enroot.sh
-if pip freeze | grep loadgen; then
-	echo SKIP ./setup.sh
-else
+if [ -e $LOCKFILE ]; then
+	conda install rust -y
+	pip install --upgrade pip
+	pip install -r requirements.txt
+	./setup_enroot.sh
 	CC=gcc CXX=g++ ./setup.sh
-fi
-if pip freeze | grep sglang; then 
-	echo SKIP pip install sglang
-else
 	CC=gcc CXX=g++ pip install sglang
+	touch $LOCKFILE
 fi
 
 # (1) Environment variables to enable CUDA-aware MPI
@@ -95,23 +91,28 @@ MPIRUN_ARGS=(
 	-x SLURM_NNODES
 )
 
-mpirun "${MPIRUN_ARGS[@]}" bash -x -c '
+# mpirun "${MPIRUN_ARGS[@]}" bash -x -c '
+srun --export=ALL bash -x -c '
+# WORLD_SIZE=$OMPI_COMM_WORLD_SIZE
+# RANK=$OMPI_COMM_WORLD_RANK
+WORLD_SIZE=$SLURM_JOB_NUM_NODES
+RANK=$SLURM_NODEID
 CC=gcc CXX=g++ python3 -m sglang.launch_server \
 	--model-path /work/hps0/home/ea0020/other-code/inference/language/gpt-oss-120b/download/gpt-oss-model/gpt-oss-120b \
 	--host 0.0.0.0 \
 	--port 30000 \
 	--tensor-parallel-size 4 \
-	--nnodes "${OMPI_COMM_WORLD_SIZE}" \
-	--node-rank "${OMPI_COMM_WORLD_RANK}" \
+	--nnodes "${WORLD_SIZE}" \
+	--node-rank "${RANK}" \
 	--nccl-init-addr "${NCCL_INIT_ADDR}" \
 	--max-running-requests 512 \
 	--mem-fraction-static 0.85 \
 	--chunked-prefill-size 16384 \
 	--enable-metrics \
 	--stream-interval 500 \
-	> "logs/server_${TIME_STAMP}_rank${OMPI_COMM_WORLD_RANK}.log" 2>&1 &
+	> "logs/server_${TIME_STAMP}_rank${RANK}.log" 2>&1 &
 SERVER_PID=$!
-echo "[Rank ${OMPI_COMM_WORLD_RANK}] Server PID: $SERVER_PID"
+echo "[Rank ${RANK}] Server PID: $SERVER_PID"
 wait
 ' &
 
@@ -128,8 +129,6 @@ for i in $(seq 1 600); do
     fi
     sleep 2
 done
-
-exit
 
 echo "[Leader] Waiting 60s for warmup (FlashInfer + NCCL)..."
 sleep 60
