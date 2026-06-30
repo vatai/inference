@@ -7,20 +7,16 @@
 #SBATCH --cpus-per-task=144
 #SBATCH --time=8:00:00
 
-
 # module load nvhpc-hpcx
 
 # Initialize and activate conda
-[ -e .venv ] || conda create -p .venv -y python pip
+[ -e .venv ] || conda create -p .venv -y python=3.13 pip rust
 eval "$(conda shell.bash hook)"
-activate ./.venv
+conda activate ./.venv
 
 LOCKFILE=ai4s.setup.done
-
 if ! [ -e $LOCKFILE ]; then
-	conda install rust -y
 	pip install --upgrade pip
-	pip install -r requirements.txt
 	./setup_enroot.sh
 	CC=gcc CXX=g++ ./setup.sh
 	CC=gcc CXX=g++ pip install sglang

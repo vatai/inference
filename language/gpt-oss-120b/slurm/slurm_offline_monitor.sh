@@ -3,16 +3,25 @@
 #SBATCH --partition=1n4gpu
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=4
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=512G
+#SBATCH --cpus-per-task=144
 #SBATCH --time=4:00:00
 
 WORKDIR=$SLURM_SUBMIT_DIR
 cd $WORKDIR
 
 # Initialize and activate conda
+[ -e .venv ] || conda create -p .venv -y python=3.13 pip rust
 eval "$(conda shell.bash hook)"
-conda activate bisection
+conda activate ./.venv
+
+LOCKFILE=ai4s.setup.done
+if ! [ -e $LOCKFILE ]; then
+	pip install --upgrade pip
+	./setup_enroot.sh
+	CC=gcc CXX=g++ ./setup.sh
+	CC=gcc CXX=g++ pip install sglang
+	touch $LOCKFILE
+fi
 
 export TOKENIZERS_PARALLELISM=false
 export PYTHONUNBUFFERED=1
